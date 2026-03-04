@@ -26,6 +26,7 @@ import Thread from "../assets/thread.svg?react";
 import Naver from "../assets/naverblog.svg?react";
 import Logo from "../assets/logo.svg?react";
 import useItems from "../hooks/useItems";
+import { TossTest } from "../components/TossTest";
 
 export default function HomePage() {
     const { buyerName, setBuyerName, buyerPhone, setBuyerPhone, buyerId, setBuyerId, handleLogin } = useBuyer();
@@ -121,8 +122,8 @@ export default function HomePage() {
             setIsMobile(window.innerWidth <= 768);
         };
         checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
+        window.addEventListener("resize", checkMobile);
+        return () => window.removeEventListener("resize", checkMobile);
     }, []);
 
     // 주문 기능 활성화 여부 확인 및 오픈시간 정보 조회
@@ -168,7 +169,7 @@ export default function HomePage() {
             }
             try {
                 const profileRes = await getCustomerProfile(buyerId);
-                
+
                 // 프로필의 blockInfo에 blocked 필드가 있으면 확인
                 // 차단되어 있으면 주문 기능 비활성화
                 if (profileRes.data?.blockInfo?.blocked === true) {
@@ -252,12 +253,12 @@ export default function HomePage() {
             alert("⚠️ 고객 정보가 없습니다.");
             return;
         }
-        
+
         if (!reason || reason.trim() === "") {
             alert("⚠️ 취소 사유를 입력해주세요.");
             return;
         }
-        
+
         try {
             const { cancelOrderByCustomer } = await import("../api/order");
             const cancelData = { reason: reason.trim() };
@@ -285,7 +286,7 @@ export default function HomePage() {
             alert("⚠️ 이름과 연락처를 입력해주세요.");
             return;
         }
-        
+
         // 전화번호 형식 검증
         if (!validatePhoneNumber(buyerPhone)) {
             alert(getPhoneValidationMessage());
@@ -303,9 +304,9 @@ export default function HomePage() {
             alert("⚠️ 개인정보 처리방침에 동의해주세요.");
             return;
         }
-        
+
         // bankTransferEnabled 체크 제거 - 배송은 UI에서 막고, 주문 제출은 허용
-        
+
         if (purchaseType === "delivery") {
             if (!address.address1 || !address.address2) {
                 alert("⚠️ 배달 주소를 입력해주세요.");
@@ -376,7 +377,7 @@ export default function HomePage() {
                         if (entranceCode && entranceCode.trim()) {
                             finalAddress2 = finalAddress2 ? `${finalAddress2}\n공동현관: ${entranceCode.trim()}` : `공동현관: ${entranceCode.trim()}`;
                         }
-                        
+
                         const addressData = {
                             label: address.label || "집",
                             recipientName: address.recipientName || buyerName,
@@ -390,33 +391,33 @@ export default function HomePage() {
                         if (address.addressId) {
                             // 기존 주소 업데이트
                             const updateRes = await updateAddress(currentBuyerId, Number(address.addressId), addressData);
-                        if (!updateRes.data || !updateRes.data.addressId) {
-                            alert("⚠️ 주소 업데이트에 실패했습니다. 다시 시도해주세요.");
-                            setIsSubmitting(false);
-                            return;
+                            if (!updateRes.data || !updateRes.data.addressId) {
+                                alert("⚠️ 주소 업데이트에 실패했습니다. 다시 시도해주세요.");
+                                setIsSubmitting(false);
+                                return;
+                            }
+                            addressId = updateRes.data.addressId;
+                        } else {
+                            // 새 주소 저장
+                            const res = await addAddress(currentBuyerId, addressData);
+                            if (!res.data || !res.data.addressId) {
+                                alert("⚠️ 주소 저장에 실패했습니다. 다시 시도해주세요.");
+                                setIsSubmitting(false);
+                                return;
+                            }
+                            addressId = res.data.addressId;
                         }
-                        addressId = updateRes.data.addressId;
                     } else {
-                        // 새 주소 저장
-                        const res = await addAddress(currentBuyerId, addressData);
-                        if (!res.data || !res.data.addressId) {
-                            alert("⚠️ 주소 저장에 실패했습니다. 다시 시도해주세요.");
-                            setIsSubmitting(false);
-                            return;
-                        }
-                        addressId = res.data.addressId;
+                        alert("⚠️ 배달 주소를 모두 입력해주세요.");
+                        setIsSubmitting(false);
+                        return;
                     }
-                } else {
-                    alert("⚠️ 배달 주소를 모두 입력해주세요.");
+                } catch (err: any) {
+                    console.error("Address save error:", err);
+                    alert(`⚠️ 주소 저장 중 오류가 발생했습니다: ${err.response?.data?.message || err.message}`);
                     setIsSubmitting(false);
                     return;
                 }
-            } catch (err: any) {
-                console.error("Address save error:", err);
-                alert(`⚠️ 주소 저장 중 오류가 발생했습니다: ${err.response?.data?.message || err.message}`);
-                setIsSubmitting(false);
-                return;
-            }
             }
 
             // 주문 생성
@@ -437,7 +438,7 @@ export default function HomePage() {
                 finalAmount: clientFinalAmount,
                 subtotalAmount: clientSubtotalAmount,
                 discountAmount: clientDiscountAmount,
-                purchaseType
+                purchaseType,
             });
 
             const orderData = {
@@ -460,7 +461,7 @@ export default function HomePage() {
             console.log("Order creation request:", {
                 orderData,
                 purchaseType,
-                addressId: purchaseType === "delivery" ? addressId : null
+                addressId: purchaseType === "delivery" ? addressId : null,
             });
 
             let orderRes;
@@ -493,7 +494,7 @@ export default function HomePage() {
 
             const orderId = orderRes.data.orderId;
             const orderNo = orderRes.data.orderNo;
-            
+
             // 서버 응답 값 확인 (디버깅용)
             console.log("Order creation response:", {
                 orderId,
@@ -505,9 +506,9 @@ export default function HomePage() {
                 clientFinalAmount: clientFinalAmount,
                 clientDeliveryFee: clientDeliveryFee,
                 clientSubtotalAmount: clientSubtotalAmount,
-                clientDiscountAmount: clientDiscountAmount
+                clientDiscountAmount: clientDiscountAmount,
             });
-            
+
             // 클라이언트에서 계산한 값 사용 (입금요청 화면과 동일한 값)
             // 서버가 클라이언트에서 전달한 값을 무시하고 자체 계산할 수 있으므로
             // 클라이언트에서 계산한 값을 사용하여 일관성 유지
@@ -552,7 +553,7 @@ export default function HomePage() {
             } catch (err: any) {
                 console.error("Payment creation error:", err);
                 const errorMessage = err.response?.data?.message || err.message || "알 수 없는 오류";
-                
+
                 // "이미 처리된 결제" 오류인 경우 정상 처리로 간주
                 if (errorMessage.includes("이미 처리된 결제") || errorMessage.includes("already processed") || errorMessage.includes("이미 존재")) {
                     // 기존 결제 정보 조회 시도
@@ -604,7 +605,17 @@ export default function HomePage() {
     };
 
     return (
-        <div style={{ fontFamily: "'Apple SD Gothic Neo', sans-serif", background: "#f8f8f8", margin: 0, padding: isMobile ? "15px" : "30px", display: "flex", justifyContent: "center", minHeight: "100vh" }}>
+        <div
+            style={{
+                fontFamily: "'Apple SD Gothic Neo', sans-serif",
+                background: "#f8f8f8",
+                margin: 0,
+                padding: isMobile ? "15px" : "30px",
+                display: "flex",
+                justifyContent: "center",
+                minHeight: "100vh",
+            }}
+        >
             <main style={{ maxWidth: "480px", width: "100%", background: "#fff", padding: isMobile ? "12px" : "24px", borderRadius: "18px", boxShadow: "0 5px 15px rgba(0,0,0,0.08)" }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "20px" }}>
                     <Logo width="240" height="144" />
@@ -617,9 +628,7 @@ export default function HomePage() {
 
                 {!orderEnabled && (
                     <div style={{ padding: "16px", background: "#fff3cd", border: "1px solid #ffc107", borderRadius: "12px", marginBottom: "18px", textAlign: "center" }}>
-                        <p style={{ margin: 0, fontSize: "14px", color: "#856404", fontWeight: "bold", marginBottom: "8px" }}>
-                            ⚠️ 주문할 수 있는 시간이 아닙니다.
-                        </p>
+                        <p style={{ margin: 0, fontSize: "14px", color: "#856404", fontWeight: "bold", marginBottom: "8px" }}>⚠️ 주문할 수 있는 시간이 아닙니다.</p>
                         {orderFeatureInfo?.description && (
                             <p style={{ margin: 0, fontSize: "13px", color: "#856404" }}>
                                 📅 오픈시간: {orderFeatureInfo.description.includes("주문 기능") ? orderFeatureInfo.description : `${orderFeatureInfo.description} 주문 기능`}
@@ -627,6 +636,7 @@ export default function HomePage() {
                         )}
                     </div>
                 )}
+                <button onClick={() => setOrderEnabled(true)}>test</button>
 
                 {orderEnabled && (
                     <>
@@ -653,15 +663,7 @@ export default function HomePage() {
                 )}
 
                 {orderEnabled && (
-                    <ProductSelection 
-                        cart={cart} 
-                        changeQty={changeQty} 
-                        items={menuItems} 
-                        paymentMethod={paymentMethod} 
-                        purchaseType={purchaseType} 
-                        summary={summary}
-                        orderEnabled={orderEnabled}
-                    />
+                    <ProductSelection cart={cart} changeQty={changeQty} items={menuItems} paymentMethod={paymentMethod} purchaseType={purchaseType} summary={summary} orderEnabled={orderEnabled} />
                 )}
 
                 {orderEnabled && (
@@ -680,8 +682,8 @@ export default function HomePage() {
 
                         <OrderFormNotice />
 
-                        <OrderSummary 
-                            summary={summary} 
+                        <OrderSummary
+                            summary={summary}
                             onSubmit={submitOrder}
                             agreeTerms={agreeTerms}
                             setAgreeTerms={setAgreeTerms}
@@ -697,7 +699,7 @@ export default function HomePage() {
             </main>
 
             <OrderConfirmModal show={showOrderConfirm} id={buyerId} onClose={() => setShowOrderConfirm(false)} onCancel={cancelOrder} />
-            
+
             <OrderCompleteModal
                 show={showOrderComplete}
                 orderNo={completedOrderNo}
@@ -711,7 +713,33 @@ export default function HomePage() {
             />
 
             {tossPaymentData && (
-                <TossPaymentModal
+                // <TossPaymentModal
+                //     show={showTossPaymentModal}
+                //     amount={tossPaymentData.amount}
+                //     orderNo={tossPaymentData.orderNo}
+                //     orderName={tossPaymentData.orderName}
+                //     customerName={buyerName}
+                //     customerPhone={buyerPhone}
+                //     pendingOrderData={{
+                //         orderNo: tossPaymentData.orderNo,
+                //         finalAmount: tossPaymentData.finalAmount,
+                //         buyerName,
+                //         productAmount: tossPaymentData.subtotalAmount,
+                //         discountAmount: tossPaymentData.discountAmount,
+                //         deliveryFee: tossPaymentData.deliveryFee,
+                //     }}
+                //     onClose={() => {
+                //         setShowTossPaymentModal(false);
+                //         setTossPaymentData(null);
+                //     }}
+                //     onSuccess={() => {}}
+                //     onFail={(msg) => {
+                //         alert(`⚠️ ${msg}`);
+                //         setShowTossPaymentModal(false);
+                //         setTossPaymentData(null);
+                //     }}
+                // />
+                <TossTest
                     show={showTossPaymentModal}
                     amount={tossPaymentData.amount}
                     orderNo={tossPaymentData.orderNo}
