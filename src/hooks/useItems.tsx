@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Discount, DiscountRule, FetchedMenuItem, MenuItem } from "../types/types";
 import { getProducts } from "../api/product";
 import { getActiveDiscountPolicies } from "../api/discount";
+import { getAdminProductCategories } from "../api/category";
 import type { DiscountRuleResponse } from "../types/api";
 
 export const useItems = () => {
@@ -19,10 +20,16 @@ export const useItems = () => {
     useEffect(() => {
         const init = async () => {
             try {
-                const [itemsRes, rulesRes] = await Promise.all([
+                const [itemsRes, rulesRes, categoriesRes] = await Promise.all([
                     getProducts(),
                     getActiveDiscountPolicies(),
+                    getAdminProductCategories().catch(() => ({ data: [] })),
                 ]);
+
+                const categorySortMap: Record<string, number> = {};
+                (categoriesRes.data || []).forEach((c: { code: string; sortOrder?: number }) => {
+                    categorySortMap[c.code] = c.sortOrder ?? 9999;
+                });
 
                 // 삭제된 상품만 제외 (품절 상품은 표시)
                 const items: MenuItem[] = itemsRes.data
@@ -37,6 +44,8 @@ export const useItems = () => {
                         categoryCode: i.categoryCode,
                         categoryName: i.categoryName,
                         taxType: i.taxType,
+                        sortOrder: i.sortOrder,
+                        categorySortOrder: categorySortMap[i.categoryCode || ""] ?? 9999,
                         bankDiscount: [],
                         qtyDiscount: [],
                     }));

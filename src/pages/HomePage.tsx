@@ -741,6 +741,7 @@ export default function HomePage() {
                 // />
                 <TossTest
                     show={showTossPaymentModal}
+                    buyerId={buyerId}
                     amount={tossPaymentData.amount}
                     orderNo={tossPaymentData.orderNo}
                     orderName={tossPaymentData.orderName}

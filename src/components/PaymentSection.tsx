@@ -43,7 +43,10 @@ export const PaymentSection: React.FC<Props> = ({ paymentMethod, setPaymentMetho
                     무통장입금
                 </button>
                 <button
-                    onClick={() => setPaymentMethod("CARD")}
+                    onClick={() => {
+                        setPaymentMethod("CARD");
+                        alert("카드 도입 심사용");
+                    }}
                     style={{
                         padding: "12px",
                         border: paymentMethod === "CARD" ? "1px solid #111" : "1px solid #ccc",

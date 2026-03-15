@@ -21,31 +21,44 @@ export const ProductSelection: React.FC<Props> = ({ cart, changeQty, summary, it
     // 카테고리별 접기/펼치기 상태 관리 (기본값: 모두 펼침)
     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
-    // 카테고리별로 상품 그룹화 (서버에서 받은 categoryName 사용)
+    // 어드민 API sortOrder 적용: 카테고리 순서 → 상품 순서
     const groupedItems = useMemo(() => {
-        const groups: Record<string, { name: string; items: FetchedMenuItem[] }> = {};
+        // 1. 카테고리 sortOrder → 상품 sortOrder 순으로 정렬
+        const sortedItems = [...items].sort((a, b) => {
+            const catA = a.categorySortOrder ?? 9999;
+            const catB = b.categorySortOrder ?? 9999;
+            if (catA !== catB) return catA - catB;
+            const orderA = a.sortOrder ?? 9999;
+            const orderB = b.sortOrder ?? 9999;
+            return orderA - orderB;
+        });
+
+        const groups: Record<string, { name: string; items: FetchedMenuItem[]; categorySortOrder: number }> = {};
         
-        items.forEach(item => {
+        sortedItems.forEach(item => {
             const categoryCode = item.categoryCode || "OTHER";
             const categoryName = item.categoryName || "기타";
+            const categorySortOrder = item.categorySortOrder ?? 9999;
             
             if (!groups[categoryCode]) {
                 groups[categoryCode] = {
                     name: categoryName,
-                    items: []
+                    items: [],
+                    categorySortOrder
                 };
             }
             groups[categoryCode].items.push(item);
         });
 
-        // 카테고리 코드로 정렬하여 반환
+        // 카테고리 순서: 어드민 categorySortOrder 기준
         return Object.entries(groups)
             .map(([code, data]) => ({
                 category: code,
                 label: data.name,
-                items: data.items
+                items: data.items,
+                categorySortOrder: data.categorySortOrder
             }))
-            .sort((a, b) => a.category.localeCompare(b.category));
+            .sort((a, b) => a.categorySortOrder - b.categorySortOrder);
     }, [items]);
 
     // 카테고리 토글 함수

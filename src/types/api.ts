@@ -127,6 +127,16 @@ export interface AdminProductStockRow {
   sortOrder?: number;
 }
 
+export interface AdminCategoryRow {
+  categoryId: number;
+  code: string;
+  name: string;
+  active: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface ProductListRow {
   productId: number;
   name: string;
